@@ -99,53 +99,31 @@ def gen_data(sig, n, d_dimension):
     return X, y
 
 
-def pred(X, w):
-    '''
-    This function makes binary classification using logistic regression.
-
-    X: feature vector, 1*d array (d: #dimension)
-    w: weight vector, 1*d array
-    
-    Return:
-        yhat: predicted output
-    '''
-    yhat = 0.
-    for i in range(X.shape[0]):
-        yhat += w[i] * X[i]
-    yhat = 1.0 / (1.0 + np.exp(-yhat))
-    if yhat < 0.5:
-        yhat = -1
-    else:
-        yhat = 1 
-    return yhat
-
-
 def log_loss(X, y, w):
     '''
     This function outputs the logistic loss.
 
-    X: feature vectors, n*d array (n: #sample, d: #dimension)
-    y: labels, 1*n array
-    w: weight vectors, n*d array
+    X: feature vector, 1*d array (d: #dimension)
+    y: label
+    w: weight vector, 1*d array
     
     Return: logistic loss
     '''
     return np.log(1 + np.exp(-y * np.dot(w.T, X)))
 
 
-def err(yhat, y):
+def err(X, y, w):
     '''
     This function outputs the classification error.
 
-    yhat: predicted label
+    X: feature vector, 1*d array (d: #dimension)
     y: label
+    w: weight vector, 1*d array
     
     Return: classification error
     '''
-    if yhat == y:
-        return 0
-    else:
-        return 1
+    yhat = -1 if np.dot(w.T, X) < 0.5 else 1
+    return 0 if yhat == y else 1
 
 
 def sgd(X, y, w_t, prj_code, l_rate):
@@ -203,7 +181,8 @@ def train(train_x, train_y, test_x, test_y, l_rate, n_epoch, bs, prj_code):
             # SGD
             w_t = sgd(X, y, w_t, prj_code, l_rate)
             # Backward propagation
-            w_all.append(w_t)    
+            w_all.append(w_t)
+    
         w = np.average(np.array(w_all), axis=0)
     
         # Evaluate
@@ -211,11 +190,9 @@ def train(train_x, train_y, test_x, test_y, l_rate, n_epoch, bs, prj_code):
             # Read data
             X = test_x[idx]
             y = test_y[idx]
-            # Predict
-            yhat = pred(X, w)
             # Evaluate
             risk += log_loss(X, y, w) / test_x.shape[0]
-            cls_err += err(yhat, y) / test_x.shape[0]
+            cls_err += err(X, y, w) / test_x.shape[0]
     
         risk_all = np.append(risk_all, risk)
         cls_err_all = np.append(cls_err_all, cls_err)
