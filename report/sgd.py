@@ -25,8 +25,10 @@ def ball_prj(sample):
     return: 
         a unit ball centered around the origin
     '''
-    ratio = 1 / np.linalg.norm(sample)
-    return [i * ratio for i in sample]
+    if np.linalg.norm(sample, ord=2) > 1:
+        return sample / np.linalg.norm(sample, ord=2)
+    else:
+        return sample
 
 
 def prj_data(X, y, prj_code):
@@ -226,7 +228,7 @@ for prj_code in [0, 1]:
             else:
                 m = 2
 
-            rho = d_dimension + 1
+            rho = np.sqrt(d_dimension + 1)
             l_rate = m / (rho * np.sqrt(bs))
 
             # Generate training data
