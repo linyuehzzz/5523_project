@@ -11,7 +11,7 @@ def cube_prj(sample):
     sample: features or gradients, 1*d array (d: #dimension)
 
     return: 
-        a hypercube with edge length 2 and centered around the origin
+        the projected vector onto a hypercube with edge length 2 and centered around the origin
     '''
     return [np.sign(i) * min(np.abs(i), 1) for i in sample]
 
@@ -23,7 +23,7 @@ def ball_prj(sample):
     sample: features or gradients, 1*d array (d: #dimension)
 
     return: 
-        a unit ball centered around the origin
+        the projected vector onto a unit ball centered around the origin
     '''
     if np.linalg.norm(sample, ord=2) > 1:
         return sample / np.linalg.norm(sample, ord=2)
@@ -128,23 +128,27 @@ def err(X, y, w):
     return 0 if yhat == y else 1
 
 
-def sgd(X, y, w_t, prj_code, l_rate):
+def sdg(train_x, train_y):
     '''
-    This function implements SGD.
-
-    X: feature vectors, n*d array (n: #sample, d: #dimension)
-    y: labels, 1*n array
-    w_t: weights at t, n*d array
-    prj_code: type of projection, 0 for cube, 1 for ball
-    l_rate: learning rate
-    
-    Return: 
-        w_t: updated weight at t+1
+    train_x: feature vectors one batch
+    train_y: lables in one batch
+    return: 
+            w: weight vector trained on one batch
     '''
-    w_t = np.array(w_t)
-    g = (-y * X * np.exp(-y * np.dot(w_t.T, X)) / (1 + np.exp(-y * np.dot(w_t.T, X))))
-    w_t = prj_grad(np.add(w_t, np.multiply(-l_rate, g)), prj_code)
-    return w_t
+    w_all = []
+    w_t = np.zeros(train_x.shape[1])
+    for idx in range(train_x.shape[0]):
+        # Read data
+        X = train_x[idx]
+        y = train_y[idx]
+        w_t = np.array(w_t)
+        # Calculate gradient
+        g = (-y * X * np.exp(-y * np.dot(w_t.T, X)) / (1 + np.exp(-y * np.dot(w_t.T, X))))
+        # Project gradient
+        w_t = prj_grad(np.add(w_t, np.multiply(-l_rate, g)), prj_code)
+        # Backward propagation
+        w_all.append(w_t)
+    return np.average(np.array(w_all), axis=0)
 
 
 def train(train_x, train_y, test_x, test_y, l_rate, n_epoch, bs, prj_code):
@@ -173,19 +177,10 @@ def train(train_x, train_y, test_x, test_y, l_rate, n_epoch, bs, prj_code):
     cls_err_all = []
 
     for epoch in range(n_epoch):
-        w_t = np.random.uniform(-1, 1, (train_x.shape[1]))
         risk = cls_err = 0.
-        w_all = []
-        for idx in range(epoch * bs, (epoch + 1) * bs):
-            # Read data
-            X = train_x[idx]
-            y = train_y[idx]
-            # SGD
-            w_t = sgd(X, y, w_t, prj_code, l_rate)
-            # Backward propagation
-            w_all.append(w_t)
-    
-        w = np.average(np.array(w_all), axis=0)
+        train_x0 = train_x[epoch * bs: (epoch + 1) * bs] ## use current batch to for trainning
+        train_y0 = train_y[epoch * bs: (epoch + 1) * bs] ## use current batch to for trainning
+        w = sdg(train_x0, train_y0)
     
         # Evaluate
         for idx in range(test_x.shape[0]):
