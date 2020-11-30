@@ -124,8 +124,7 @@ def err(X, y, w):
     
     Return: classification error
     '''
-    yhat = -1 if np.dot(w.T, X) < 0.5 else 1
-    return 0 if yhat == y else 1
+    return 0 if np.sign(np.dot(w.T, X)) == y else 1
 
 
 def sdg(train_x, train_y):
@@ -219,11 +218,12 @@ for prj_code in [0, 1]:
         for bs in train_bs:
 
             if prj_code == 0:
+                rho = np.sqrt(d_dimension + 1)
                 m = 2 * np.sqrt(d_dimension + 1)
             else:
+                rho = np.sqrt(2)
                 m = 2
-
-            rho = np.sqrt(d_dimension + 1)
+     
             l_rate = m / (rho * np.sqrt(bs))
 
             # Generate training data
