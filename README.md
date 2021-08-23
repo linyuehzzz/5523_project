@@ -1,4 +1,4 @@
-# 5523_project
+# Stochastic Gradient Descent for Logistic Regression
 Group project for AU20 CSE 5523
 
 
